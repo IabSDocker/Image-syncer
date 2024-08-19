@@ -1,17 +1,3 @@
-//package utils
-//
-//import "github.com/sirupsen/logrus"
-//
-//// CreateLogger creates a logger instance
-//func CreateLogger() *logrus.Logger {
-//    logger := logrus.New()
-//    logger.SetFormatter(&logrus.TextFormatter{
-//        FullTimestamp: true,
-//    })
-//    return logger
-//}
-
-
 package utils
 
 import (

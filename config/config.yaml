@@ -4,4 +4,3 @@ images:
   - "nginx:1.29.0"
   - "nginx:latest"
   - "alpine:3.12"
-
