@@ -1,0 +1,22 @@
+package main
+
+import (
+    "fmt"
+    "image-syncer/utils"
+    "image-syncer/syncer"
+)
+
+func main() {
+    configPath := "config/config.yaml"
+    config, err := utils.LoadConfig(configPath)
+    if err != nil {
+        fmt.Printf("Error loading config: %v\n", err)
+        return
+    }
+    
+    logger := utils.CreateLogger()
+    
+    syncer := syncer.NewSyncer(config, logger)
+    syncer.StartSync()
+}
+

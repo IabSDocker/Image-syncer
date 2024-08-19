@@ -1,0 +1,7 @@
+source_repo: "docker.io"
+target_repo: "localhost:5000"
+images:
+  - "nginx:1.29.0"
+  - "nginx:latest"
+  - "alpine:3.12"
+
