@@ -29,6 +29,8 @@ sh build.sh
 source_repo: "docker.io"
 # 目标仓库
 target_repo: "localhost:5000"
+# 更新后不可删除namespace字段，若不使用namespace字段让其为空即可
+namespace: ""
 # 要同步的镜像列表
 images:
   - "iabsdocker/registry:latest"  
@@ -49,6 +51,7 @@ localhost:5000/registry                     latest            f7b1a4c78949   5 w
 source_repo: "docker.io"
 # 目标仓库
 target_repo: "localhost:5000"
+# 更新后，当启用namespace后同步后的镜像tag将发生变化
 namespace: "mytest"
 # 要同步的镜像列表
 images:
@@ -60,7 +63,7 @@ REPOSITORY                                  TAG               IMAGE ID       CRE
 localhost:5000/mytest/nginx                 latest            5ef79149e0ec   4 days ago      188MB
 nginx                                       latest            5ef79149e0ec   4 days ago      188MB
 iabsdocker/registry                         latest            f7b1a4c78949   5 weeks ago     45.3MB
-localhost:5000/mytest/iabsdocker/registry   latest            f7b1a4c78949   5 weeks ago     45.3MB
+localhost:5000/mytest/registry   latest            f7b1a4c78949   5 weeks ago     45.3MB
 ```
 
 ### 日志相关

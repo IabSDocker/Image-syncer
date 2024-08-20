@@ -9,11 +9,11 @@ import (
 )
 
 type Syncer struct {
-    SourceRepo  string
-    TargetRepo  string
-    Namespace   string
-    Images      []string
-    Logger      *logrus.Logger
+    SourceRepo   string
+    TargetRepo   string
+    Namespace    string
+    Images       []string
+    Logger       *logrus.Logger
     successCount int
     failureCount int
     failures     []string
@@ -33,15 +33,28 @@ func NewSyncer(config *utils.Config, logger *logrus.Logger) *Syncer {
 func (s *Syncer) syncImage(image string, wg *sync.WaitGroup, ch chan<- string) {
     defer wg.Done()
 
+    // 构建源镜像路径
     sourceImage := fmt.Sprintf("%s/%s", s.SourceRepo, image)
-    targetImage := fmt.Sprintf("%s/%s", s.TargetRepo, image)
 
-    // Apply namespace if it is set
-    if s.Namespace != "" {
-        targetImage = fmt.Sprintf("%s/%s/%s", s.TargetRepo, s.Namespace, image)
+    // 构建目标镜像路径
+    var targetImage string
+    if s.Namespace == "" {
+        // 不启用 namespace 字段，目标镜像路径和源镜像路径一致
+        targetImage = fmt.Sprintf("%s/%s", s.TargetRepo, image)
+    } else {
+        // 启用 namespace 字段，将 namespace 加入到目标镜像路径
+        // 提取镜像名称（去掉仓库路径）
+        imageName := image
+        if idx := findFirstSlash(image); idx != -1 {
+            imageName = image[idx+1:]
+        }
+        targetImage = fmt.Sprintf("%s/%s/%s", s.TargetRepo, s.Namespace, imageName)
     }
 
-    // Pull the image from the source repository
+    s.Logger.Infof("Source image: %s", sourceImage)
+    s.Logger.Infof("Target image: %s", targetImage)
+
+    // 拉取镜像
     s.Logger.Infof("Pulling image: %s", sourceImage)
     cmd := exec.Command("docker", "pull", sourceImage)
     if output, err := cmd.CombinedOutput(); err != nil {
@@ -51,7 +64,7 @@ func (s *Syncer) syncImage(image string, wg *sync.WaitGroup, ch chan<- string) {
         return
     }
 
-    // Tag the image for the target repository
+    // 标记镜像
     s.Logger.Infof("Tagging image: %s as %s", sourceImage, targetImage)
     cmd = exec.Command("docker", "tag", sourceImage, targetImage)
     if output, err := cmd.CombinedOutput(); err != nil {
@@ -61,7 +74,7 @@ func (s *Syncer) syncImage(image string, wg *sync.WaitGroup, ch chan<- string) {
         return
     }
 
-    // Push the image to the target repository
+    // 推送镜像
     s.Logger.Infof("Pushing image: %s", targetImage)
     cmd = exec.Command("docker", "push", targetImage)
     if output, err := cmd.CombinedOutput(); err != nil {
@@ -73,16 +86,22 @@ func (s *Syncer) syncImage(image string, wg *sync.WaitGroup, ch chan<- string) {
 
     s.successCount++
     ch <- fmt.Sprintf("Successfully synced %s", image)
+    
+    // 删除源镜像
+    exec.Command("docker", "rmi", sourceImage).Run()
+
+    // 删除目标镜像
+    exec.Command("docker", "rmi", targetImage).Run()
 }
 
 func (s *Syncer) StartSync() {
     var wg sync.WaitGroup
     ch := make(chan string, len(s.Images))
-    
+
     // 使用固定数量的 goroutines 并发处理镜像同步
     maxConcurrency := 5
     sem := make(chan struct{}, maxConcurrency)
-    
+
     for _, image := range s.Images {
         wg.Add(1)
         sem <- struct{}{}
@@ -91,12 +110,12 @@ func (s *Syncer) StartSync() {
             s.syncImage(img, &wg, ch)
         }(image)
     }
-    
+
     go func() {
         wg.Wait()
         close(ch)
     }()
-    
+
     for msg := range ch {
         s.Logger.Info(msg)
     }
@@ -117,4 +136,14 @@ func formatFailures(failures []string) string {
         result += failure + "\n"
     }
     return result
+}
+
+// 查找第一个 '/' 的索引
+func findFirstSlash(image string) int {
+    for i, ch := range image {
+        if ch == '/' {
+            return i
+        }
+    }
+    return -1
 }
