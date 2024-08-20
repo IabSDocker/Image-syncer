@@ -72,6 +72,7 @@ localhost:5000/mytest/registry   latest            f7b1a4c78949   5 weeks ago   
 [root@luckly Image-syncer]# cat config/config.yaml 
 source_repo: "docker.io"
 target_repo: "localhost:5000"
+namespace: ""
 images:
   - "nginx:1.29.0"
   - "nginx:1.30.0"
